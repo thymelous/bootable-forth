@@ -1,21 +1,30 @@
-[bits 16]
+[bits 32]
 [org 0x7e00]
 
 main_entry:
-  mov ah, 0xe
-  mov cx, boot_message_len
-  mov si, boot_message
+  mov ecx, boot_message_len
+  mov esi, boot_message
   call print_str
 
 jmp $
 
-; cx contains length of the string,
-; si contains address of the first byte
+; ecx contains length of the string,
+; esi contains address of the first byte
 print_str:
+  push edx
+  push eax
+  mov edx, video_mem
+  mov ah, 0x0f       ; white-on-black
+print_str_loop:
   lodsb
-  int 0x10
-  loop print_str
+  mov [edx], ax
+  add edx, 2
+  loop print_str_loop
+print_str_finish:
+  pop eax
+  pop edx
   ret
 
 boot_message db 'x86 Bootable Forth'
 boot_message_len equ $-boot_message
+video_mem equ 0xb8000
