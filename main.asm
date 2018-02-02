@@ -6,22 +6,17 @@ main_entry:
   ;mov esi, boot_message
   ;call print_str
 
-disable_keyboard_int:
-  mov al, 0x20 ; request control byte (controller cmd 0x20)
-  out 0x64, al
+; Use set 1 scan codes (6), disable mouse (5), interrupts = 0 (0)
+%define keyboard_controller_settings 0b01100000
 
-  call wait_keyboard_in
-  in al, 0x60  ; read control byte
-  and al, 0xfe ; clear the lowest bit (interrupts)
-  push eax     ; save the modified byte
-
+setup_keyboard:
   call wait_keyboard_out
   mov al, 0x60 ; write next byte to control (controller cmd 0x60)
   out 0x64, al
 
   call wait_keyboard_out
-  pop eax      ; restore the modified byte
-  out 0x60, al ; send it
+  mov al, keyboard_controller_settings
+  out 0x60, al
 
   nop
 
