@@ -5,41 +5,14 @@ main_entry:
   ;mov ecx, boot_message_len
   ;mov esi, boot_message
   ;call print_str
-
-; Use set 1 scan codes (6), disable mouse (5), interrupts = 0 (0)
-%define keyboard_controller_settings 0b01100000
-
-setup_keyboard:
-  call wait_keyboard_out
-  mov al, 0x60 ; write next byte to control (controller cmd 0x60)
-  out 0x64, al
-
-  call wait_keyboard_out
-  mov al, keyboard_controller_settings
-  out 0x60, al
-
-  nop
-
-read_keyboard:
-  call wait_keyboard_in
+  call kb_setup
+  call kb_wait_in
   in al, 0x60
-  jmp read_keyboard
+  call kb_scancode_to_ascii
+  mov [video_mem], al
+  jmp main_entry
 
-%define kb_status_flags 0x64
-%define kb_input_buffer_full_mask 0b10
-%define kb_output_buffer_full_mask 0b1
-
-wait_keyboard_out:
-  in al, kb_status_flags
-  test al, kb_input_buffer_full_mask 
-  jnz wait_keyboard_out
-  ret
-
-wait_keyboard_in:
-  in al, kb_status_flags
-  test al, kb_output_buffer_full_mask
-  jz wait_keyboard_in
-  ret
+%include "keyboard.asm"
 
 jmp $
 
