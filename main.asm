@@ -6,13 +6,12 @@ main_entry:
   ;mov esi, boot_message
   ;call print_str
   call kb_setup
-  call kb_wait_in
-  in al, 0x60
-  call kb_scancode_to_ascii
-  mov [video_mem], al
-  jmp main_entry
+read_loop:
+  call read_line
+  jmp read_loop
 
 %include "keyboard.asm"
+%include "interface.asm"
 
 jmp $
 

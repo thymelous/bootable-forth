@@ -17,6 +17,19 @@ kb_setup:
   ret
 
 ; =======
+; High-level routines
+; =======
+
+; Returns a valid (non-null) character in al
+kb_read_char:
+  call kb_wait_in
+  in al, 0x60
+  call kb_scancode_to_ascii
+  test al, al
+  jz kb_read_char
+  ret
+
+; =======
 ; Polling routines
 ; ======
 
