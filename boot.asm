@@ -15,7 +15,7 @@ load_from_disk:
   mov dh, 0           ; head
   mov cl, 2           ; sector (counting from 1)
   mov bx, main_sector ; destination address
-  mov al, 1           ; sectors to be read
+  mov al, 2           ; sectors to be read
   int 0x13
   jc reset_drive      ; we may need to retry the whole routine
 
