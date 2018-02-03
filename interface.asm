@@ -16,7 +16,8 @@
 ; ecx - number of characters
 read_line:
   push eax ; used for input
-  push edi ; used in display_char
+  push edx ; see display_char
+  push edi ; see display_cursor
   mov ebx, line_buffer       ; reset buffer
   mov [line_buffer_top], ebx
   mov ecx, line_buffer_size  ; set up iterator
@@ -34,6 +35,7 @@ read_line_loop:
   loop read_line_loop
 read_line_ret:
   pop edi
+  pop edx
   pop eax
   mov ebx, line_buffer_size
   sub ebx, ecx              ; length = buffer_size - remaining_space
@@ -52,19 +54,55 @@ line_buffer times (line_buffer_size) db 0
 line_buffer_top equ line_buffer
 
 video_buffer_top dd 0xb8000
+video_cursor_position dw 0
 
 ; expects char in al
-; may use edi as a scratch register
+; may use edx and edi as scratch registers
 display_char:
-  mov edi, [video_buffer_top]
-  mov byte [edi], al
-  mov byte [edi + 1], 0x0f ; white-on-black
-  add edi, 2
-  mov [video_buffer_top], edi
+  mov edx, [video_buffer_top]
+  mov byte [edx], al
+  mov byte [edx + 1], 0x07 ; gray-on-black
+  add edx, 2
+  mov [video_buffer_top], edx
+advance_cursor:
+  mov di, [video_cursor_position]
+  inc di
+  mov word [video_cursor_position], di
+  push eax            ; save the char
+  call display_cursor
+  pop eax
   ret
+
 erase_char:
-  mov edi, [video_buffer_top]
-  sub edi, 2
-  mov word [edi], 0x0000
-  mov [video_buffer_top], edi
+  mov edx, [video_buffer_top]
+  sub edx, 2
+  mov word [edx], 0x0720      ; space, gray-on-black (cursor color)
+  mov [video_buffer_top], edx
+move_cursor_back:
+  mov di, [video_cursor_position]
+  dec di
+  mov word [video_cursor_position], di
+  call display_cursor
+  ret
+
+; See https://wiki.osdev.org/Text_Mode_Cursor
+; Uses ax, dx, di as scratch registers
+display_cursor:
+  ; cursor low port to index register
+  mov al, 0xf
+  mov dx, 0x3d4
+  out dx, al
+  ; cursor low position to data register
+  mov ax, di
+  mov dx, 0x3d5
+  out dx, al
+  ; cursor high port to index register
+  mov al, 0xe
+  mov dx, 0x3d4
+  out dx, al
+  ; cursor high position to data register
+  mov ax, di
+  shr ax, 8
+  mov dx, 0x3d5
+  out dx, al
   ret
