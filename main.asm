@@ -10,8 +10,9 @@ read_loop:
   call read_line
   jmp read_loop
 
-%include "interface.asm"
 %include "keyboard.asm"
+%include "vga.asm"
+%include "interface.asm"
 
 jmp $
 
