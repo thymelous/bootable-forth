@@ -9,7 +9,8 @@
 
 ; Line buffer can only fit a single line; multi-line input
 ; is not supported (needs to broken into several lines)
-%define line_buffer_size 80
+; Two characters are reserved for the starting arrow
+%define line_buffer_size 78
 
 ; Return values:
 ; %ebx - first char address
@@ -21,6 +22,11 @@ read_line:
   mov ebx, line_buffer       ; reset buffer
   mov [line_buffer_top], ebx
   mov ecx, line_buffer_size  ; set up iterator
+read_line_decorations:
+  mov al, '>'
+  call vga_put_char
+  mov al, ' '
+  call vga_put_char
 read_line_loop:
   call kb_read_char
   cmp al, 0         ; ignore null chars
@@ -28,11 +34,13 @@ read_line_loop:
   cmp al, 0x8       ; check for backspace
   je read_line_backspace
   cmp al, 0x10      ; LF ends the line
-  je read_line_ret
+  je read_line_newline
   mov byte [ebx], al
   inc ebx
   call vga_put_char
   loop read_line_loop
+read_line_newline:
+  call vga_newline
 read_line_ret:
   pop edi
   pop edx

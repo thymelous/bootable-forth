@@ -35,6 +35,23 @@ vga_retreat_cursor:
   call vga_refresh_cursor
   ret
 
+; Uses %eax, %edx, %edi as scratch registers, does not restore them!
+vga_newline:
+  xor edx, edx
+  mov ax, [vga_cursor_position]      ; load current cursor position
+  mov di, 80                         ; 80 = row width
+  idiv di                            ; current row = position / row width
+  sub di, dx                         ; remaining chars = row width - remainder
+  mov edx, [vga_buffer_top]
+  shl edi, 1                         ; inc buffer by 2 bytes per remaining char
+  add edx, edi
+  mov [vga_buffer_top], edx
+  inc al                             ; new row = old row + 1
+  imul ax, 80                        ; cursor pos = new row * row width
+  mov word [vga_cursor_position], ax
+  call vga_refresh_cursor
+  ret
+
 ; =======
 ; Low-level routines
 ; =======
